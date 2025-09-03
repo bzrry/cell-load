@@ -109,6 +109,8 @@ class PerturbationDataset(Dataset):
         self.split_perturbed_indices = {s: set() for s in splits}
         self.split_control_indices = {s: set() for s in splits}
 
+        self.gene_expression_cache = [self.fetch_gene_expression(int(i)) for i in self.all_indices]
+
     def set_store_raw_expression(self, flag: bool) -> None:
         """
         Enable or disable inclusion of raw gene expression in each sample.
@@ -201,7 +203,8 @@ class PerturbationDataset(Dataset):
                     file_idx, "X_hvg"
                 )
             elif self.output_space == "all":
-                sample["pert_cell_counts"] = self.fetch_gene_expression(file_idx)
+                #sample["pert_cell_counts"] = self.fetch_gene_expression(file_idx)
+                sample["pert_cell_counts"] = self.gene_expression_cache[file_idx]
 
         # Optionally include raw expressions for the control cell
         if self.store_raw_basal:
@@ -210,7 +213,8 @@ class PerturbationDataset(Dataset):
                     ctrl_idx, "X_hvg"
                 )
             elif self.output_space == "all":
-                sample["ctrl_cell_counts"] = self.fetch_gene_expression(ctrl_idx)
+                #sample["ctrl_cell_counts"] = self.fetch_gene_expression(ctrl_idx)
+                sample["ctrl_cell_counts"] = self.gene_expression_cache[ctrl_idx]
 
         # Optionally include cell barcodes
         if self.barcode and self.cell_barcodes is not None:
