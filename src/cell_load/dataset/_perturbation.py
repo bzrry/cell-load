@@ -112,7 +112,9 @@ class PerturbationDataset(Dataset):
         self.split_control_indices = {s: set() for s in splits}
 
         if self.cache_gene_exp:
-            self.gene_expression_cache = [self.fetch_gene_expression(int(i)) for i in self.all_indices]
+            # TODO: uncomment?
+            #self.gene_expression_cache = [self.fetch_gene_expression(int(i)) for i in self.all_indices]
+            self.obsm_expression_cache = [self.fetch_obsm_expression(int(i), "X_hvg") for i in self.all_indices]
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """
@@ -202,9 +204,12 @@ class PerturbationDataset(Dataset):
         # Optionally include raw expressions for the perturbed cell, for training a decoder
         if self.store_raw_expression:
             if self.output_space == "gene":
-                sample["pert_cell_counts"] = self.fetch_obsm_expression(
-                    file_idx, "X_hvg"
-                )
+                if self.cache_gene_exp:
+                    sample["pert_cell_counts"] = self.obsm_expression_cache[file_idx]
+                else:
+                    sample["pert_cell_counts"] = self.fetch_obsm_expression(
+                        file_idx, "X_hvg"
+                    )
             elif self.output_space == "all":
                 if self.cache_gene_exp:
                     sample["pert_cell_counts"] = self.gene_expression_cache[file_idx]
@@ -214,9 +219,12 @@ class PerturbationDataset(Dataset):
         # Optionally include raw expressions for the control cell
         if self.store_raw_basal:
             if self.output_space == "gene":
-                sample["ctrl_cell_counts"] = self.fetch_obsm_expression(
-                    ctrl_idx, "X_hvg"
-                )
+                if self.cache_gene_exp:
+                    sample["ctrl_cell_counts"] = self.obsm_expression_cache[ctrl_idx]
+                else:
+                    sample["ctrl_cell_counts"] = self.fetch_obsm_expression(
+                        ctrl_idx, "X_hvg"
+                    )
             elif self.output_space == "all":
                 if self.cache_gene_exp:
                     sample["ctrl_cell_counts"] = self.gene_expression_cache[ctrl_idx]
