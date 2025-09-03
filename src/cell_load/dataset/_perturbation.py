@@ -40,6 +40,7 @@ class PerturbationDataset(Dataset):
         should_yield_control_cells: bool = True,
         store_raw_basal: bool = False,
         barcode: bool = False,
+        cache_gene_exp: bool = False,
         **kwargs,
     ):
         """
@@ -80,6 +81,7 @@ class PerturbationDataset(Dataset):
         self.should_yield_control_cells = should_yield_control_cells
         self.store_raw_basal = store_raw_basal
         self.barcode = barcode
+        self.cache_gene_exp = cache_gene_exp
         self.output_space = kwargs.get("output_space", "gene")
 
         # Load metadata cache and open file
@@ -109,7 +111,8 @@ class PerturbationDataset(Dataset):
         self.split_perturbed_indices = {s: set() for s in splits}
         self.split_control_indices = {s: set() for s in splits}
 
-        self.gene_expression_cache = [self.fetch_gene_expression(int(i)) for i in self.all_indices]
+        if self.cache_gene_exp:
+            self.gene_expression_cache = [self.fetch_gene_expression(int(i)) for i in self.all_indices]
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """
@@ -203,8 +206,10 @@ class PerturbationDataset(Dataset):
                     file_idx, "X_hvg"
                 )
             elif self.output_space == "all":
-                #sample["pert_cell_counts"] = self.fetch_gene_expression(file_idx)
-                sample["pert_cell_counts"] = self.gene_expression_cache[file_idx]
+                if self.cache_gene_exp:
+                    sample["pert_cell_counts"] = self.gene_expression_cache[file_idx]
+                else:
+                    sample["pert_cell_counts"] = self.fetch_gene_expression(file_idx)
 
         # Optionally include raw expressions for the control cell
         if self.store_raw_basal:
@@ -213,8 +218,10 @@ class PerturbationDataset(Dataset):
                     ctrl_idx, "X_hvg"
                 )
             elif self.output_space == "all":
-                #sample["ctrl_cell_counts"] = self.fetch_gene_expression(ctrl_idx)
-                sample["ctrl_cell_counts"] = self.gene_expression_cache[ctrl_idx]
+                if self.cache_gene_exp:
+                    sample["ctrl_cell_counts"] = self.gene_expression_cache[ctrl_idx]
+                else:
+                    sample["ctrl_cell_counts"] = self.fetch_gene_expression(ctrl_idx)
 
         # Optionally include cell barcodes
         if self.barcode and self.cell_barcodes is not None:
