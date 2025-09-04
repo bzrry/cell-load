@@ -307,19 +307,10 @@ class PerturbationDataset(Dataset):
             indptr = self.h5_file["/X/indptr"]
             start_ptr = indptr[idx]
             end_ptr = indptr[idx + 1]
-            sub_data = torch.tensor(
-                self.h5_file["/X/data"][start_ptr:end_ptr], dtype=torch.float32
-            )
-            sub_indices = torch.tensor(
-                self.h5_file["/X/indices"][start_ptr:end_ptr], dtype=torch.long
-            )
-            counts = torch.sparse_csr_tensor(
-                torch.tensor([0], dtype=torch.long),
-                sub_indices,
-                sub_data,
-                (1, self.n_genes),
-            )
-            data = counts.to_dense().squeeze()
+            data = torch.zeros(self.n_genes, dtype=torch.float32)
+            indices = self.h5_file["/X/indices"][start_ptr:end_ptr]
+            values = self.h5_file["/X/data"][start_ptr:end_ptr]
+            data[indices] = torch.tensor(values, dtype=torch.float32)
         else:
             row_data = self.h5_file["/X"][idx]
             data = torch.tensor(row_data, dtype=torch.float32)
