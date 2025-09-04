@@ -113,9 +113,9 @@ class BaseMappingStrategy(ABC):
             return pert_expr, ctrl_expr, control_index
         else:
             control_index = self.get_control_index(dataset, split, perturbed_idx)
-            if self.cache_gene_exp:
-                ctrl_expr = self.gene_expression_cache[control_index]
-                pert_expr = self.gene_expression_cache[perturbed_idx]
+            if dataset.cache_gene_exp:
+                ctrl_expr = dataset.gene_expression_cache[control_index]
+                pert_expr = dataset.gene_expression_cache[perturbed_idx]
             else:
                 ctrl_expr = dataset.fetch_gene_expression(control_index)
                 pert_expr = dataset.fetch_gene_expression(perturbed_idx)
