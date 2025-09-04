@@ -98,7 +98,7 @@ class BaseMappingStrategy(ABC):
 
         # Get expression(s) based on embed_key
         if dataset.embed_key:
-            logger.info("dataset.embed_key is set")
+            logger.info("****** dataset.embed_key is set")
             control_index = self.get_control_index(dataset, split, perturbed_idx)
             pert_expr = dataset.fetch_obsm_expression(perturbed_idx, dataset.embed_key)
             if control_index is None:
