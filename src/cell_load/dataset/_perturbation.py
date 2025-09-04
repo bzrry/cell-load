@@ -113,7 +113,7 @@ class PerturbationDataset(Dataset):
 
         logger.info(f"****** cache_gene_exp: {self.cache_gene_exp}")
         if self.cache_gene_exp:
-            self.gene_expression_cache = [self.fetch_gene_expression(int(i), caching=True) for i in self.all_indices]
+            self.gene_expression_matrix = self._load_full_matrix()
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """
@@ -291,25 +291,7 @@ class PerturbationDataset(Dataset):
         else:
             return Subset(self, perturbed_indices)
 
-    def fetch_csr_data(self, idx: int) -> torch.Tensor:
-        indptr = self.h5_file["/X/indptr"]
-        start_ptr = indptr[idx]
-        end_ptr = indptr[idx + 1]
-        sub_data = torch.tensor(
-            self.h5_file["/X/data"][start_ptr:end_ptr], dtype=torch.float32
-        )
-        sub_indices = torch.tensor(
-            self.h5_file["/X/indices"][start_ptr:end_ptr], dtype=torch.long
-        )
-        counts = torch.sparse_csr_tensor(
-            torch.tensor([0], dtype=torch.long),
-            sub_indices,
-            sub_data,
-            (1, self.n_genes),
-        )
-        return counts.to_dense().squeeze()
-
-    def fetch_gene_expression(self, idx: int, caching=False) -> torch.Tensor:
+    def fetch_gene_expression(self, idx: int) -> torch.Tensor:
         """
         Fetch raw gene counts for a given cell index.
 
@@ -321,15 +303,51 @@ class PerturbationDataset(Dataset):
         Returns:
             1D FloatTensor of length self.n_genes
         """
-        if idx % 1000 == 0:
-            logger.info(f"fetch_csr_data, caching={caching}, index: {idx}")
         attrs = dict(self.h5_file["X"].attrs)
         if attrs["encoding-type"] == "csr_matrix":
-            data = self.fetch_csr_data(idx)
+            indptr = self.h5_file["/X/indptr"]
+            start_ptr = indptr[idx]
+            end_ptr = indptr[idx + 1]
+            sub_data = torch.tensor(
+                self.h5_file["/X/data"][start_ptr:end_ptr], dtype=torch.float32
+            )
+            sub_indices = torch.tensor(
+                self.h5_file["/X/indices"][start_ptr:end_ptr], dtype=torch.long
+            )
+            counts = torch.sparse_csr_tensor(
+                torch.tensor([0], dtype=torch.long),
+                sub_indices,
+                sub_data,
+                (1, self.n_genes),
+            )
+            data = counts.to_dense().squeeze()
         else:
             row_data = self.h5_file["/X"][idx]
             data = torch.tensor(row_data, dtype=torch.float32)
         return data
+
+    def _load_full_matrix(self) -> torch.Tensor:
+        """Load the entire gene expression matrix into memory."""
+        attrs = dict(self.h5_file["X"].attrs)
+
+        if attrs["encoding-type"] == "csr_matrix":
+            # Load CSR components
+            data = torch.tensor(self.h5_file["/X/data"][:], dtype=torch.float32)
+            indices = torch.tensor(self.h5_file["/X/indices"][:], dtype=torch.long)
+            indptr = torch.tensor(self.h5_file["/X/indptr"][:], dtype=torch.long)
+
+            # Create sparse tensor and convert to dense
+            n_cells = len(indptr) - 1
+            sparse_matrix = torch.sparse_csr_tensor(
+                crow_indices=indptr,
+                col_indices=indices,
+                values=data,
+                size=(n_cells, self.n_genes)
+            )
+            return sparse_matrix.to_dense()
+        else:
+            # Load dense matrix directly
+            return torch.tensor(self.h5_file["/X"][:], dtype=torch.float32)
 
     def fetch_obsm_expression(self, idx: int, key: str) -> torch.Tensor:
         """
