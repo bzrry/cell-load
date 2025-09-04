@@ -111,9 +111,8 @@ class PerturbationDataset(Dataset):
         self.split_perturbed_indices = {s: set() for s in splits}
         self.split_control_indices = {s: set() for s in splits}
 
-        logger.info(f"****** cache_gene_exp: {self.cache_gene_exp}")
         if self.cache_gene_exp:
-            self.gene_expression_matrix = self._load_full_matrix()
+            self.gene_expression_matrix = self._load_full_gene_expression_matrix()
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """
@@ -326,7 +325,7 @@ class PerturbationDataset(Dataset):
             data = torch.tensor(row_data, dtype=torch.float32)
         return data
 
-    def _load_full_matrix(self) -> torch.Tensor:
+    def _load_full_gene_expression_matrix(self) -> torch.Tensor:
         """Load the entire gene expression matrix into memory."""
         attrs = dict(self.h5_file["X"].attrs)
 

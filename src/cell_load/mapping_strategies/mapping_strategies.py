@@ -114,6 +114,8 @@ class BaseMappingStrategy(ABC):
         else:
             control_index = self.get_control_index(dataset, split, perturbed_idx)
             if dataset.cache_gene_exp:
+                if control_index % 10000 == 0:
+                    logger.info(f"****** pulling from cached matrix")
                 ctrl_expr = dataset.gene_expression_matrix[control_index]
                 pert_expr = dataset.gene_expression_matrix[perturbed_idx]
             else:
