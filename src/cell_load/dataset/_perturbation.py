@@ -40,6 +40,7 @@ class PerturbationDataset(Dataset):
         should_yield_control_cells: bool = True,
         store_raw_basal: bool = False,
         barcode: bool = False,
+        cache_gene_exp: bool = False,
         **kwargs,
     ):
         """
@@ -79,6 +80,7 @@ class PerturbationDataset(Dataset):
         self.store_raw_expression = store_raw_expression
         self.should_yield_control_cells = should_yield_control_cells
         self.store_raw_basal = store_raw_basal
+        self.cache_gene_exp = cache_gene_exp
         self.barcode = barcode
         self.output_space = kwargs.get("output_space", "gene")
 
@@ -108,6 +110,9 @@ class PerturbationDataset(Dataset):
         splits = ["train", "train_eval", "val", "test"]
         self.split_perturbed_indices = {s: set() for s in splits}
         self.split_control_indices = {s: set() for s in splits}
+
+        if self.cache_gene_exp:
+            self.gene_expression_cache = [self.fetch_gene_expression(int(i)) for i in self.all_indices]
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """
