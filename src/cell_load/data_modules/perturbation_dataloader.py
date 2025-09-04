@@ -431,13 +431,13 @@ class PerturbationDataModule(LightningDataModule):
         # Create one-hot maps
         if self.perturbation_features_file:
             # Load the custom featurizations from a torch file
-            featurization_dict = torch.load(self.perturbation_features_file)
+            featurization_dict = torch.load(self.perturbation_features_file, dtype=torch.bfloat16)
             # Validate that every perturbation in all_perts is in the featurization dict.
             missing = all_perts - set(featurization_dict.keys())
             if len(missing) > 0:
                 feature_dim = next(iter(featurization_dict.values())).shape[-1]
                 for pert in missing:
-                    featurization_dict[pert] = torch.zeros(feature_dim)
+                    featurization_dict[pert] = torch.zeros(feature_dim, dtype=torch.bfloat16)
 
                 logger.info(
                     "Set %d missing perturbations to zero vectors.", len(missing)
