@@ -106,6 +106,8 @@ class PerturbationDataModule(LightningDataModule):
         self.normalize_counts = kwargs.get("normalize_counts", False)
         self.store_raw_basal = kwargs.get("store_raw_basal", False)
         self.barcode = kwargs.get("barcode", False)
+        self.prefetch_factor = kwargs.get("prefetch_factor", None)
+        self.persistent_workers = kwargs.get("persistent_workers", False)
 
         logger.info(
             f"Initializing DataModule: batch_size={batch_size}, workers={num_workers}, "
@@ -374,13 +376,26 @@ class PerturbationDataModule(LightningDataModule):
             use_batch=use_batch,
         )
 
+        if test or self.num_workers == 0:
+            prefetch_factor = None
+        else:
+            if self.prefetch_factor is not None:
+                prefetch_factor = self.prefetch_factor
+            else:
+                prefetch_factor = 4
+
+        logger.info("***** num_workers:", self.num_workers)
+        logger.info("***** persistent_workers:", self.persistent_workers)
+        logger.info("***** prefetch_factor:", prefetch_factor)
+
         return DataLoader(
             ds,
             batch_sampler=sampler,
             num_workers=self.num_workers,
             collate_fn=collate_fn,
             pin_memory=True,
-            prefetch_factor=4 if not test and self.num_workers > 0 else None,
+            persistent_workers=self.persistent_workers,
+            prefetch_factor=prefetch_factor,
         )
 
     def _setup_global_maps(self):
