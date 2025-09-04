@@ -112,7 +112,7 @@ class PerturbationDataset(Dataset):
         self.split_control_indices = {s: set() for s in splits}
 
         if self.cache_gene_exp:
-            self.gene_expression_cache = [self.fetch_gene_expression(int(i)) for i in self.all_indices]
+            self.gene_expression_cache = [self.fetch_gene_expression(int(i), caching=True) for i in self.all_indices]
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """
@@ -308,7 +308,7 @@ class PerturbationDataset(Dataset):
         )
         return counts.to_dense().squeeze()
 
-    def fetch_gene_expression(self, idx: int) -> torch.Tensor:
+    def fetch_gene_expression(self, idx: int, caching=False) -> torch.Tensor:
         """
         Fetch raw gene counts for a given cell index.
 
@@ -320,6 +320,8 @@ class PerturbationDataset(Dataset):
         Returns:
             1D FloatTensor of length self.n_genes
         """
+        if idx % 100 == 0:
+            logger.info(f"fetch_csr_data, caching={caching}, index: {idx}")
         attrs = dict(self.h5_file["X"].attrs)
         if attrs["encoding-type"] == "csr_matrix":
             data = self.fetch_csr_data(idx)
