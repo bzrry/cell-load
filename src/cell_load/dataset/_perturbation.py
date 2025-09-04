@@ -111,6 +111,7 @@ class PerturbationDataset(Dataset):
         self.split_perturbed_indices = {s: set() for s in splits}
         self.split_control_indices = {s: set() for s in splits}
 
+        logger.info(f"****** cache_gene_exp: {self.cache_gene_exp}")
         if self.cache_gene_exp:
             self.gene_expression_cache = [self.fetch_gene_expression(int(i), caching=True) for i in self.all_indices]
 
@@ -320,7 +321,7 @@ class PerturbationDataset(Dataset):
         Returns:
             1D FloatTensor of length self.n_genes
         """
-        if idx % 100 == 0:
+        if idx % 1000 == 0:
             logger.info(f"fetch_csr_data, caching={caching}, index: {idx}")
         attrs = dict(self.h5_file["X"].attrs)
         if attrs["encoding-type"] == "csr_matrix":
