@@ -384,10 +384,6 @@ class PerturbationDataModule(LightningDataModule):
             else:
                 prefetch_factor = 4
 
-        logger.info(f"***** num_workers: {self.num_workers}")
-        logger.info(f"***** persistent_workers: {self.persistent_workers}")
-        logger.info(f"***** prefetch_factor: {prefetch_factor}")
-
         return DataLoader(
             ds,
             batch_sampler=sampler,
