@@ -108,6 +108,7 @@ class PerturbationDataModule(LightningDataModule):
         self.barcode = kwargs.get("barcode", False)
         self.prefetch_factor = kwargs.get("prefetch_factor", None)
         self.persistent_workers = kwargs.get("persistent_workers", False)
+        self.cache_gene_exp = kwargs.get("cache_gene_exp", False)
 
         logger.info(
             f"Initializing DataModule: batch_size={batch_size}, workers={num_workers}, "
@@ -487,6 +488,7 @@ class PerturbationDataModule(LightningDataModule):
             output_space=self.output_space,
             store_raw_basal=self.store_raw_basal,
             barcode=self.barcode,
+            cache_gene_exp=self.cache_gene_exp,
         )
 
     def _setup_datasets(self):
