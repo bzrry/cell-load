@@ -142,7 +142,7 @@ def generate_onehot_map(keys) -> dict:
     unique_keys = sorted(set(keys))
     num_classes = len(unique_keys)
     # identity matrix rows are one-hot vectors
-    onehots = torch.eye(num_classes, dtype=torch.bfloat16)
+    onehots = torch.eye(num_classes)
     return {k: onehots[i] for i, k in enumerate(unique_keys)}
 
 

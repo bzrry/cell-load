@@ -331,7 +331,7 @@ class PerturbationDataset(Dataset):
 
         if attrs["encoding-type"] == "csr_matrix":
             # Load CSR components
-            data = torch.tensor(self.h5_file["/X/data"][:], dtype=torch.bfloat16)
+            data = torch.tensor(self.h5_file["/X/data"][:])
             indices = torch.tensor(self.h5_file["/X/indices"][:], dtype=torch.long)
             indptr = torch.tensor(self.h5_file["/X/indptr"][:], dtype=torch.long)
 
@@ -346,7 +346,7 @@ class PerturbationDataset(Dataset):
             return sparse_matrix.to_dense()
         else:
             # Load dense matrix directly
-            return torch.tensor(self.h5_file["/X"][:], dtype=torch.bfloat16)
+            return torch.tensor(self.h5_file["/X"][:])
 
     def fetch_obsm_expression(self, idx: int, key: str) -> torch.Tensor:
         """
