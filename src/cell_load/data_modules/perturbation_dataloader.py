@@ -385,11 +385,6 @@ class PerturbationDataModule(LightningDataModule):
             else:
                 prefetch_factor = 4
 
-        def _init_worker(_):
-            import torch
-            torch.set_num_threads(1)
-            torch.set_num_interop_threads(1)
-
         return DataLoader(
             ds,
             batch_sampler=sampler,
@@ -398,7 +393,6 @@ class PerturbationDataModule(LightningDataModule):
             pin_memory=True,
             persistent_workers=self.persistent_workers,
             prefetch_factor=prefetch_factor,
-            worker_init_fn=_init_worker,
         )
 
     def _setup_global_maps(self):
