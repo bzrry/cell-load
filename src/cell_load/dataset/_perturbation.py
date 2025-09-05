@@ -222,6 +222,12 @@ class PerturbationDataset(Dataset):
             sample["pert_cell_barcode"] = self.cell_barcodes[file_idx]
             sample["ctrl_cell_barcode"] = self.cell_barcodes[ctrl_idx]
 
+        logger.info(f"pert_expr: {pert_expr.dtype}")
+        logger.info(f"ctrl_cell_emb: {ctrl_expr.dtype}")
+        logger.info(f"pert_emb: {pert_emb.dtype}")
+        logger.info(f"batch: {batch.dtype}")
+        logger.info(f"cell_type: {cell_type}")
+        logger.info(f"cell_type_onehot: {pert_expr.dtype}")
         return sample
 
     def get_batch(self, idx: int) -> torch.Tensor:
