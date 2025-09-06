@@ -430,79 +430,73 @@ class PerturbationDataset(Dataset):
         Optimized collate function with preallocated lists.
         Safely handles normalization when vectors sum to zero.
         """
-        # Get batch size
         batch_size = len(batch)
+        first = batch[0]
 
-        # Preallocate lists with exact size
-        pert_cell_emb_list = [None] * batch_size
-        ctrl_cell_emb_list = [None] * batch_size
-        pert_emb_list = [None] * batch_size
-        pert_name_list = [None] * batch_size
-        cell_type_list = [None] * batch_size
-        cell_type_onehot_list = [None] * batch_size
-        batch_list = [None] * batch_size
-        batch_name_list = [None] * batch_size
+        pert_cell_emb = torch.empty(batch_size, *first["pert_cell_emb"].shape)
+        ctrl_cell_emb = torch.empty(batch_size, *first["ctrl_cell_emb"].shape)
+        pert_emb = torch.empty(batch_size, *first["pert_emb"].shape)
+        cell_type_onehot = torch.empty(batch_size, *first["cell_type_onehot"].shape)
+        _batch = torch.empty(batch_size, *first["batch"].shape)
 
-        # Check if optional fields exist
-        has_pert_cell_counts = "pert_cell_counts" in batch[0]
-        has_ctrl_cell_counts = "ctrl_cell_counts" in batch[0]
-        has_barcodes = "pert_cell_barcode" in batch[0]
+        pert_name = [None] * batch_size
+        cell_type = [None] * batch_size
+        batch_name = [None] * batch_size
 
-        # Preallocate optional lists if needed
+        has_pert_cell_counts = "pert_cell_counts" in first
+        has_ctrl_cell_counts = "ctrl_cell_counts" in first
+        has_barcodes = "pert_cell_barcode" in first
+
         if has_pert_cell_counts:
-            pert_cell_counts_list = [None] * batch_size
+            pert_cell_counts = torch.empty(batch_size, *first["pert_cell_counts"].shape)
 
         if has_ctrl_cell_counts:
-            ctrl_cell_counts_list = [None] * batch_size
+            ctrl_cell_counts = torch.empty(batch_size, *first["ctrl_cell_counts"].shape)
 
         if has_barcodes:
-            pert_cell_barcode_list = [None] * batch_size
-            ctrl_cell_barcode_list = [None] * batch_size
+            pert_cell_barcode = [None] * batch_size
+            ctrl_cell_barcode = [None] * batch_size
 
-        # Process all items in a single pass
         for i, item in enumerate(batch):
-            pert_cell_emb_list[i] = item["pert_cell_emb"]
-            ctrl_cell_emb_list[i] = item["ctrl_cell_emb"]
-            pert_emb_list[i] = item["pert_emb"]
-            pert_name_list[i] = item["pert_name"]
-            cell_type_list[i] = item["cell_type"]
-            cell_type_onehot_list[i] = item["cell_type_onehot"]
-            batch_list[i] = item["batch"]
-            batch_name_list[i] = item["batch_name"]
+            pert_cell_emb[i] = item["pert_cell_emb"]
+            ctrl_cell_emb[i] = item["ctrl_cell_emb"]
+            pert_emb[i] = item["pert_emb"]
+            pert_name[i] = item["pert_name"]
+            cell_type[i] = item["cell_type"]
+            cell_type_onehot[i] = item["cell_type_onehot"]
+            _batch[i] = item["batch"]
+            batch_name[i] = item["batch_name"]
 
             if has_pert_cell_counts:
-                pert_cell_counts_list[i] = item["pert_cell_counts"]
+                pert_cell_counts[i] = item["pert_cell_counts"]
 
             if has_ctrl_cell_counts:
-                ctrl_cell_counts_list[i] = item["ctrl_cell_counts"]
+                ctrl_cell_counts[i] = item["ctrl_cell_counts"]
 
             if has_barcodes:
-                pert_cell_barcode_list[i] = item["pert_cell_barcode"]
-                ctrl_cell_barcode_list[i] = item["ctrl_cell_barcode"]
+                pert_cell_barcode[i] = item["pert_cell_barcode"]
+                ctrl_cell_barcode[i] = item["ctrl_cell_barcode"]
 
-        # Create batch dictionary
         batch_dict = {
-            "pert_cell_emb": torch.stack(pert_cell_emb_list),
-            "ctrl_cell_emb": torch.stack(ctrl_cell_emb_list),
-            "pert_emb": torch.stack(pert_emb_list),
-            "pert_name": pert_name_list,
-            "cell_type": cell_type_list,
-            "cell_type_onehot": torch.stack(cell_type_onehot_list),
-            "batch": torch.stack(batch_list),
-            "batch_name": batch_name_list,
+            "pert_cell_emb": pert_cell_emb,
+            "ctrl_cell_emb": ctrl_cell_emb,
+            "pert_emb": pert_emb,
+            "pert_name": pert_name,
+            "cell_type": cell_type,
+            "cell_type_onehot": cell_type_onehot,
+            "batch": _batch,
+            "batch_name": batch_name,
         }
 
         if has_pert_cell_counts:
-            pert_cell_counts = torch.stack(pert_cell_counts_list)
             batch_dict["pert_cell_counts"] = pert_cell_counts
 
         if has_ctrl_cell_counts:
-            ctrl_cell_counts = torch.stack(ctrl_cell_counts_list)
             batch_dict["ctrl_cell_counts"] = ctrl_cell_counts
 
         if has_barcodes:
-            batch_dict["pert_cell_barcode"] = pert_cell_barcode_list
-            batch_dict["ctrl_cell_barcode"] = ctrl_cell_barcode_list
+            batch_dict["pert_cell_barcode"] = pert_cell_barcode
+            batch_dict["ctrl_cell_barcode"] = ctrl_cell_barcode
 
         return batch_dict
 
