@@ -494,45 +494,11 @@ class PerturbationDataset(Dataset):
 
         if has_pert_cell_counts:
             pert_cell_counts = torch.stack(pert_cell_counts_list)
-
-            is_discrete = suspected_discrete_torch(pert_cell_counts)
-            is_log = suspected_log_torch(pert_cell_counts)
-            already_logged = (not is_discrete) and is_log
             batch_dict["pert_cell_counts"] = pert_cell_counts
-
-            # if already_logged:  # counts are already log transformed
-            #     if (
-            #         int_counts
-            #     ):  # if the user wants to model with raw counts, don't log transform
-            #         batch_dict["pert_cell_counts"] = torch.expm1(pert_cell_counts)
-            #     else:
-            #         batch_dict["pert_cell_counts"] = pert_cell_counts
-            # else:
-            #     if int_counts:
-            #         batch_dict["pert_cell_counts"] = pert_cell_counts
-            #     else:
-            #         batch_dict["pert_cell_counts"] = torch.log1p(pert_cell_counts)
 
         if has_ctrl_cell_counts:
             ctrl_cell_counts = torch.stack(ctrl_cell_counts_list)
-
-            is_discrete = suspected_discrete_torch(pert_cell_counts)
-            is_log = suspected_log_torch(pert_cell_counts)
-            already_logged = (not is_discrete) and is_log
             batch_dict["ctrl_cell_counts"] = ctrl_cell_counts
-
-            # if already_logged:  # counts are already log transformed
-            #     if (
-            #         int_counts
-            #     ):  # if the user wants to model with raw counts, don't log transform
-            #         batch_dict["ctrl_cell_counts"] = torch.expm1(ctrl_cell_counts)
-            #     else:
-            #         batch_dict["ctrl_cell_counts"] = ctrl_cell_counts
-            # else:
-            #     if int_counts:
-            #         batch_dict["ctrl_cell_counts"] = ctrl_cell_counts
-            #     else:
-            #         batch_dict["ctrl_cell_counts"] = torch.log1p(ctrl_cell_counts)
 
         if has_barcodes:
             batch_dict["pert_cell_barcode"] = pert_cell_barcode_list
