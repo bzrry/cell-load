@@ -38,6 +38,9 @@ class BatchCacheDataset(Dataset):
     def __getitem__(self, idx):
         return self.batches[idx]
 
+def identity_collate(batch):
+    return batch[0]  # Since batch_size=1, unwrap the single item
+
 class PerturbationDataModule(LightningDataModule):
     """
     A unified data module that sets up train/val/test splits for multiple dataset/celltype
@@ -409,7 +412,12 @@ class PerturbationDataModule(LightningDataModule):
         )
 
         if self.cache_batches:
-            return DataLoader(BatchCacheDataset(dl), batch_size=1, shuffle=True)
+            return DataLoader(
+                BatchCacheDataset(dl),
+                collate_fn=identity_collate,
+                batch_size=1,
+                shuffle=True,
+            )
         else:
             return dl
 
