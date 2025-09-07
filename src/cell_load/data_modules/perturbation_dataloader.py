@@ -26,6 +26,18 @@ from .samplers import PerturbationBatchSampler
 logger = logging.getLogger(__name__)
 
 
+class BatchCacheDataset(Dataset):
+    def __init__(self, dataloader):
+        logger.info("Caching batches in memory...")
+        self.batches = list(dataloader)
+        logger.info(f"Cached {len(self.batches)} batches")
+
+    def __len__(self):
+        return len(self.batches)
+
+    def __getitem__(self, idx):
+        return self.batches[idx]
+
 class PerturbationDataModule(LightningDataModule):
     """
     A unified data module that sets up train/val/test splits for multiple dataset/celltype
@@ -109,6 +121,7 @@ class PerturbationDataModule(LightningDataModule):
         self.prefetch_factor = kwargs.get("prefetch_factor", None)
         self.persistent_workers = kwargs.get("persistent_workers", False)
         self.cache_gene_exp = kwargs.get("cache_gene_exp", False)
+        self.cache_batches = kwargs.get("cache_batches", False)
 
         logger.info(
             f"Initializing DataModule: batch_size={batch_size}, workers={num_workers}, "
@@ -385,7 +398,7 @@ class PerturbationDataModule(LightningDataModule):
             else:
                 prefetch_factor = 4
 
-        return DataLoader(
+        dl = DataLoader(
             ds,
             batch_sampler=sampler,
             num_workers=self.num_workers,
@@ -394,6 +407,11 @@ class PerturbationDataModule(LightningDataModule):
             persistent_workers=self.persistent_workers,
             prefetch_factor=prefetch_factor,
         )
+
+        if self.cache_batches:
+            return DataLoader(BatchCacheDataset(dl), batch_size=1, shuffle=True)
+        else:
+            return dl
 
     def _setup_global_maps(self):
         """
