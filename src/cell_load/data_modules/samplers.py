@@ -30,7 +30,7 @@ class PerturbationBatchSampler(Sampler):
         dataset: "MetadataConcatDataset",
         batch_size: int,
         drop_last: bool = False,
-        cell_sentence_len: int = 512,
+        cell_sentence_len: int = 256,
         test: bool = False,
         use_batch: bool = False,
         seed: int = 0,

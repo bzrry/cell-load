@@ -63,7 +63,7 @@ class PerturbationDataModule(LightningDataModule):
         basal_mapping_strategy: Literal["batch", "random"] = "random",
         n_basal_samples: int = 1,
         should_yield_control_cells: bool = True,
-        cell_sentence_len: int = 512,
+        cell_sentence_len: int = 256,
         cache_perturbation_control_pairs: bool = False,
         drop_last: bool = False,
         **kwargs,  # missing perturbation_features_file  and store_raw_basal for backwards compatibility
