@@ -42,6 +42,7 @@ class PerturbationDataset(Dataset):
         should_yield_control_cells: bool = True,
         store_raw_basal: bool = False,
         barcode: bool = False,
+        cache_gene_exp: bool = False,
         **kwargs,
     ):
         """
@@ -82,6 +83,7 @@ class PerturbationDataset(Dataset):
         self.should_yield_control_cells = should_yield_control_cells
         self.store_raw_basal = store_raw_basal
         self.barcode = barcode
+        self.cache_gene_exp = cache_gene_exp
         self.output_space = kwargs.get("output_space", "gene")
         if self.output_space not in {"gene", "all", "embedding"}:
             raise ValueError(
@@ -114,6 +116,32 @@ class PerturbationDataset(Dataset):
         splits = ["train", "train_eval", "val", "test"]
         self.split_perturbed_indices = {s: set() for s in splits}
         self.split_control_indices = {s: set() for s in splits}
+
+        if self.cache_gene_exp:
+            self.gene_expression_matrix = self._load_gene_expression_matrix()
+
+    def _load_gene_expression_matrix(self) -> torch.Tensor:
+        """Load the entire gene expression matrix into memory."""
+        attrs = dict(self.h5_file["X"].attrs)
+
+        if attrs["encoding-type"] == "csr_matrix":
+            # Load CSR components
+            data = torch.tensor(self.h5_file["/X/data"][:])
+            indices = torch.tensor(self.h5_file["/X/indices"][:], dtype=torch.long)
+            indptr = torch.tensor(self.h5_file["/X/indptr"][:], dtype=torch.long)
+
+            # Create sparse tensor and convert to dense
+            n_cells = len(indptr) - 1
+            sparse_matrix = torch.sparse_csr_tensor(
+                crow_indices=indptr,
+                col_indices=indices,
+                values=data,
+                size=(n_cells, self.n_genes),
+            )
+            return sparse_matrix.to_dense()
+        else:
+            # Load dense matrix directly
+            return torch.tensor(self.h5_file["/X"][:])
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """

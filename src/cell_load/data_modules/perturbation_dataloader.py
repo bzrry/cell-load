@@ -124,6 +124,7 @@ class PerturbationDataModule(LightningDataModule):
         self.normalize_counts = kwargs.get("normalize_counts", False)
         self.store_raw_basal = kwargs.get("store_raw_basal", False)
         self.barcode = kwargs.get("barcode", False)
+        self.cache_gene_exp = kwargs.get("cache_gene_exp", False)
         self.cache_batches = kwargs.get("cache_batches", False)
 
         logger.info(
@@ -505,6 +506,7 @@ class PerturbationDataModule(LightningDataModule):
             output_space=self.output_space,
             store_raw_basal=self.store_raw_basal,
             barcode=self.barcode,
+            cache_gene_exp=self.cache_gene_exp,
         )
 
     def _setup_datasets(self):
