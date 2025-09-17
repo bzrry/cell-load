@@ -481,12 +481,7 @@ class PerturbationDataset(Dataset):
         }
 
         if has_pert_cell_counts:
-            pert_cell_counts = torch.stack(pert_cell_counts_list)
-
-            is_discrete = suspected_discrete_torch(pert_cell_counts)
-            is_log = suspected_log_torch(pert_cell_counts)
-            already_logged = (not is_discrete) and is_log
-            batch_dict["pert_cell_counts"] = pert_cell_counts
+            batch_dict["pert_cell_counts"] = torch.stack(pert_cell_counts_list)
 
             # if already_logged:  # counts are already log transformed
             #     if (
@@ -502,12 +497,7 @@ class PerturbationDataset(Dataset):
             #         batch_dict["pert_cell_counts"] = torch.log1p(pert_cell_counts)
 
         if has_ctrl_cell_counts:
-            ctrl_cell_counts = torch.stack(ctrl_cell_counts_list)
-
-            is_discrete = suspected_discrete_torch(pert_cell_counts)
-            is_log = suspected_log_torch(pert_cell_counts)
-            already_logged = (not is_discrete) and is_log
-            batch_dict["ctrl_cell_counts"] = ctrl_cell_counts
+            batch_dict["ctrl_cell_counts"] = torch.stack(ctrl_cell_counts_list)
 
             # if already_logged:  # counts are already log transformed
             #     if (
