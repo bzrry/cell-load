@@ -25,6 +25,20 @@ from .samplers import PerturbationBatchSampler
 
 logger = logging.getLogger(__name__)
 
+class BatchCacheDataset(Dataset):
+    def __init__(self, dataloader):
+        logger.info("Caching batches in memory...")
+        self.batches = list(dataloader)
+        logger.info(f"Cached {len(self.batches)} batches")
+
+    def __len__(self):
+        return len(self.batches)
+
+    def __getitem__(self, idx):
+        return self.batches[idx]
+
+def identity_collate(batch):
+    return batch[0]  # Since batch_size=1, unwrap the single item
 
 class PerturbationDataModule(LightningDataModule):
     """
@@ -110,6 +124,7 @@ class PerturbationDataModule(LightningDataModule):
         self.normalize_counts = kwargs.get("normalize_counts", False)
         self.store_raw_basal = kwargs.get("store_raw_basal", False)
         self.barcode = kwargs.get("barcode", False)
+        self.cache_batches = kwargs.get("cache_batches", False)
 
         logger.info(
             f"Initializing DataModule: batch_size={batch_size}, workers={num_workers}, "
@@ -378,7 +393,7 @@ class PerturbationDataModule(LightningDataModule):
             use_batch=use_batch,
         )
 
-        return DataLoader(
+        dl = DataLoader(
             ds,
             batch_sampler=sampler,
             num_workers=self.num_workers,
@@ -386,6 +401,16 @@ class PerturbationDataModule(LightningDataModule):
             pin_memory=True,
             prefetch_factor=4 if not test and self.num_workers > 0 else None,
         )
+
+        if self.cache_batches:
+            return DataLoader(
+                BatchCacheDataset(dl),
+                collate_fn=identity_collate,
+                batch_size=1,
+                shuffle=True,
+            )
+        else:
+            return dl
 
     def _setup_global_maps(self):
         """
