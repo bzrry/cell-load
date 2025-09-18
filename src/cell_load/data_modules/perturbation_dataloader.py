@@ -126,6 +126,7 @@ class PerturbationDataModule(LightningDataModule):
         self.barcode = kwargs.get("barcode", False)
         self.cache_gene_exp = kwargs.get("cache_gene_exp", False)
         self.cache_batches = kwargs.get("cache_batches", False)
+        self.one_val_batch = kwargs.get("one_val_batch", False)
 
         logger.info(
             f"Initializing DataModule: batch_size={batch_size}, workers={num_workers}, "
@@ -217,6 +218,7 @@ class PerturbationDataModule(LightningDataModule):
             "barcode": self.barcode,
             "cache_gene_exp": self.cache_gene_exp,
             "cache_batches": self.cache_batches,
+            "one_val_batch": self.one_val_batch,
         }
 
         torch.save(save_dict, filepath)
@@ -261,6 +263,7 @@ class PerturbationDataModule(LightningDataModule):
             "barcode": save_dict.pop("barcode", True),
             "cache_gene_exp": save_dict.pop("cache_gene_exp", False),
             "cache_batches": save_dict.pop("cache_batches", False),
+            "one_val_batch": save_dict.pop("one_val_batch", False),
         }
 
         # Create new instance with all the saved parameters
@@ -358,9 +361,10 @@ class PerturbationDataModule(LightningDataModule):
         return self._create_dataloader(self.train_datasets, test=test, name="train")
 
     def val_dataloader(self):
+        batch_size = float('inf') if self.one_val_batch else None
         if len(self.val_datasets) == 0:
-            return self._create_dataloader(self.test_datasets, test=False, name="val")
-        return self._create_dataloader(self.val_datasets, test=False, name="val")
+            return self._create_dataloader(self.test_datasets, test=False, name="val", batch_size=batch_size)
+        return self._create_dataloader(self.val_datasets, test=False, name="val", batch_size=batch_size)
 
     def test_dataloader(self):
         if len(self.test_datasets) == 0:
