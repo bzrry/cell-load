@@ -26,8 +26,8 @@ from .samplers import PerturbationBatchSampler
 logger = logging.getLogger(__name__)
 
 class BatchCacheDataset(Dataset):
-    def __init__(self, dataloader):
-        logger.info("Caching batches in memory...")
+    def __init__(self, dataloader, name):
+        logger.info(f"Caching batches in memory for {name} dataloader...")
         self.batches = list(dataloader)
         logger.info(f"Cached {len(self.batches)} batches")
 
@@ -355,22 +355,22 @@ class PerturbationDataModule(LightningDataModule):
             raise ValueError(
                 "No training datasets available. Please call setup() first."
             )
-        return self._create_dataloader(self.train_datasets, test=test)
+        return self._create_dataloader(self.train_datasets, test=test, name="train")
 
     def val_dataloader(self):
         if len(self.val_datasets) == 0:
-            return self._create_dataloader(self.test_datasets, test=False)
-        return self._create_dataloader(self.val_datasets, test=False)
+            return self._create_dataloader(self.test_datasets, test=False, name="val")
+        return self._create_dataloader(self.val_datasets, test=False, name="val")
 
     def test_dataloader(self):
         if len(self.test_datasets) == 0:
             return None
-        return self._create_dataloader(self.test_datasets, test=True, batch_size=1)
+        return self._create_dataloader(self.test_datasets, test=True, name="test", batch_size=1)
 
     def predict_dataloader(self):
         if len(self.test_datasets) == 0:
             return None
-        return self._create_dataloader(self.test_datasets, test=True)
+        return self._create_dataloader(self.test_datasets, name="predict", test=True)
 
     # Helper functions to set up global maps and datasets
 
@@ -379,6 +379,7 @@ class PerturbationDataModule(LightningDataModule):
         datasets: list[Dataset],
         test: bool = False,
         batch_size: int | None = None,
+        name: str | None = None,
     ):
         """Create a DataLoader with appropriate configuration."""
         use_int_counts = "int_counts" in self.__dict__ and self.int_counts
@@ -409,7 +410,7 @@ class PerturbationDataModule(LightningDataModule):
 
         if self.cache_batches:
             return DataLoader(
-                BatchCacheDataset(dl),
+                BatchCacheDataset(dl, name),
                 collate_fn=identity_collate,
                 batch_size=1,
                 shuffle=True,
