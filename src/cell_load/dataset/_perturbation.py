@@ -40,6 +40,7 @@ class PerturbationDataset(Dataset):
         should_yield_control_cells: bool = True,
         store_raw_basal: bool = False,
         barcode: bool = False,
+        cache_gene_exp: bool = False,
         **kwargs,
     ):
         """
@@ -80,6 +81,7 @@ class PerturbationDataset(Dataset):
         self.should_yield_control_cells = should_yield_control_cells
         self.store_raw_basal = store_raw_basal
         self.barcode = barcode
+        self.cache_gene_exp = cache_gene_exp
         self.output_space = kwargs.get("output_space", "gene")
 
         # Load metadata cache and open file
@@ -108,6 +110,31 @@ class PerturbationDataset(Dataset):
         splits = ["train", "train_eval", "val", "test"]
         self.split_perturbed_indices = {s: set() for s in splits}
         self.split_control_indices = {s: set() for s in splits}
+        if self.cache_gene_exp:
+            self.gene_expression_matrix = self._load_gene_expression_matrix()
+
+    def _load_gene_expression_matrix(self) -> torch.Tensor:
+        """Load the entire gene expression matrix into memory."""
+        attrs = dict(self.h5_file["X"].attrs)
+
+        if attrs["encoding-type"] == "csr_matrix":
+            # Load CSR components
+            data = torch.tensor(self.h5_file["/X/data"][:])
+            indices = torch.tensor(self.h5_file["/X/indices"][:], dtype=torch.long)
+            indptr = torch.tensor(self.h5_file["/X/indptr"][:], dtype=torch.long)
+
+            # Create sparse tensor and convert to dense
+            n_cells = len(indptr) - 1
+            sparse_matrix = torch.sparse_csr_tensor(
+                crow_indices=indptr,
+                col_indices=indices,
+                values=data,
+                size=(n_cells, self.n_genes),
+            )
+            return sparse_matrix.to_dense()
+        else:
+            # Load dense matrix directly
+            return torch.tensor(self.h5_file["/X"][:])
 
     def set_store_raw_expression(self, flag: bool) -> None:
         """
@@ -462,12 +489,7 @@ class PerturbationDataset(Dataset):
         }
 
         if has_pert_cell_counts:
-            pert_cell_counts = torch.stack(pert_cell_counts_list)
-
-            is_discrete = suspected_discrete_torch(pert_cell_counts)
-            is_log = suspected_log_torch(pert_cell_counts)
-            already_logged = (not is_discrete) and is_log
-            batch_dict["pert_cell_counts"] = pert_cell_counts
+            batch_dict["pert_cell_counts"] = torch.stack(pert_cell_counts_list)
 
             # if already_logged:  # counts are already log transformed
             #     if (
@@ -483,12 +505,7 @@ class PerturbationDataset(Dataset):
             #         batch_dict["pert_cell_counts"] = torch.log1p(pert_cell_counts)
 
         if has_ctrl_cell_counts:
-            ctrl_cell_counts = torch.stack(ctrl_cell_counts_list)
-
-            is_discrete = suspected_discrete_torch(pert_cell_counts)
-            is_log = suspected_log_torch(pert_cell_counts)
-            already_logged = (not is_discrete) and is_log
-            batch_dict["ctrl_cell_counts"] = ctrl_cell_counts
+            batch_dict["ctrl_cell_counts"] = torch.stack(ctrl_cell_counts_list)
 
             # if already_logged:  # counts are already log transformed
             #     if (
