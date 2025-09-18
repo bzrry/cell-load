@@ -215,6 +215,8 @@ class PerturbationDataModule(LightningDataModule):
             "normalize_counts": self.normalize_counts,
             "store_raw_basal": self.store_raw_basal,
             "barcode": self.barcode,
+            "cache_gene_exp": self.cache_gene_exp,
+            "cache_batches": self.cache_batches,
         }
 
         torch.save(save_dict, filepath)
@@ -257,6 +259,8 @@ class PerturbationDataModule(LightningDataModule):
             "normalize_counts": save_dict.pop("normalize_counts", False),
             "store_raw_basal": save_dict.pop("store_raw_basal", False),
             "barcode": save_dict.pop("barcode", True),
+            "cache_gene_exp": save_dict.pop("cache_gene_exp", False),
+            "cache_batches": save_dict.pop("cache_batches", False),
         }
 
         # Create new instance with all the saved parameters
